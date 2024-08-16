@@ -30,7 +30,6 @@ set PS= ps_5_0 /E ps
 %COMPILE_SHADER% %PS% ../source/template/shaders/simple_ps.hlsl /Fo shaders/simple_ps.cso
 %COMPILE_SHADER% %VS% ../source/template/shaders/instancing_vs.hlsl /Fo shaders/instancing_vs.cso
 %COMPILE_SHADER% %VS% ../source/template/shaders/simple_vs.hlsl /Fo shaders/simple_vs.cso
-%COMPILE_SHADER% %VS% ../source/template/shaders/vs_instancing_static.hlsl /Fo shaders/vs_instancing_static.cso
 
 
 set COMPARE_TIMES= G:/boqui/projects/Code/misc/compare_times.bat

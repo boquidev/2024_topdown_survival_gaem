@@ -108,12 +108,6 @@ void init(Platform_data* memory, App_data* app, Init_data* init_data)
    request->ied = default_ied;
 
    PUSH_ASSET_REQUEST;
-   request->type = ASSET_REQUEST_VS_FROM_FILE;
-   request->filename = string("shaders/vs_instancing_static.cso");
-   request->p_uid = &app->vs_instancing_static;
-   request->ied = default_ied;
-
-   PUSH_ASSET_REQUEST;
    request->type = ASSET_REQUEST_CREATE_BLEND_STATE;
    request->p_uid = &app->blend_state_enabled;
    request->enable_alpha_blending = true;

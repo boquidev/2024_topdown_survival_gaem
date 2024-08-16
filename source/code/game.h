@@ -348,7 +348,6 @@ struct App_data
    ,dynamic_mesh_tiles
    ,vs_instancing
    ,vs_simple
-	,vs_instancing_static // THIS IS SUPERFLUOUS CUZ I COULD JUST SET THE WORLDVIEW MATRIX TO BE THE IDENTITY
    ;
 };
 
