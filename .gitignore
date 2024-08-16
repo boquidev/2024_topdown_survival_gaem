@@ -1,0 +1,12 @@
+
+
+*
+!*/
+!misc/**
+!source/**
+!build/**/
+
+!*.bat
+!*.bat
+
+!.gitignore
