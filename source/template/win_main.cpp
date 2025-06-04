@@ -30,7 +30,6 @@ struct App_dll
 
 	UPDATE_TYPE(update);
 	RENDER_TYPE(render);
-	INIT_TYPE(init);
 	CLOSE_TYPE(close_app);
 };
 
@@ -130,11 +129,9 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 			ASSERT(apps[dll_i].dll);
 			apps[dll_i].update = (UPDATE_TYPE( ))GetProcAddress(apps[dll_i].dll, "update");
 			apps[dll_i].render = (RENDER_TYPE( ))GetProcAddress(apps[dll_i].dll, "render");
-			apps[dll_i].init = (INIT_TYPE( ))GetProcAddress(apps[dll_i].dll, "init");
 			apps[dll_i].close_app = (CLOSE_TYPE( ))GetProcAddress(apps[dll_i].dll, "close_app");
 			ASSERT(apps[dll_i].update);
 			ASSERT(apps[dll_i].render);
-			ASSERT(apps[dll_i].init);
 		}
 	}
 
@@ -151,12 +148,11 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 	memory.win_time.get_current_date = &win_get_current_date;
 	memory.win_time.offset_date_by_days = &win_offset_date_by_days;
 
-	Init_data init_data = {0};
 	{
 		Asset_request* request;
 		// DEFAULT TEXTURE VIEW
 		{
-			PUSH_BACK(init_data.asset_requests, memory.temp_arena, request)
+			PUSH_BACK(memory.asset_requests, memory.temp_arena, request)
 			
 			u32* white_pixel = ARENA_PUSH_STRUCT(memory.temp_arena, u32);
 			*white_pixel = 0xffffffff;
@@ -181,7 +177,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 			);
 			Input_element_desc default_ied = {ie_names, ie_formats, 5};
 
-			PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+			PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
 			request->type = ASSET_REQUEST_VS_FROM_FILE;
 			request->filename = string("shaders/3d_vs.cso");
 			ASSERT(win_file_exists(request->filename.text));
@@ -190,7 +186,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 		}
 		// DEFAULT PIXEL SHADER
 		{
-			PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+			PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
          request->type = ASSET_REQUEST_PS_FROM_FILE;
          request->filename = string("shaders/simple_ps.cso");
 			ASSERT(win_file_exists(request->filename.text));
@@ -199,7 +195,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 
 		// DEFAULT MESH
 		{
-			PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+			PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
 			DEFINE_ARRAY(u16, plane_indices, memory.temp_arena,{0,1,2, 2,1,3});
 			DEFINE_ARRAY(Vertex, plane, memory.temp_arena, 
 				{
@@ -222,7 +218,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 
 		// DEFAULT BLEND STATE
 		{
-			PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+			PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
 			request->type = ASSET_REQUEST_CREATE_BLEND_STATE;
 			request->enable_alpha_blending = 0;
 			request->p_uid = ARENA_PUSH_STRUCT(memory.temp_arena, u16);
@@ -248,48 +244,41 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 		
 		// CREATING DEFAULT CONSTANT BUFFERS
 		
-		PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+		PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
       request->type = ASSET_REQUEST_CREATE_CONSTANT_BUFFER;
       request->constant_buffer.register_index = REGISTER_INDEX_VS_OBJECT_DATA;
       request->constant_buffer.size = sizeof(Object_buffer_data);
 
-		PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+		PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
       request->type = ASSET_REQUEST_CREATE_CONSTANT_BUFFER;
       request->constant_buffer.register_index = REGISTER_INDEX_VS_PROJECTION_MATRIX;
       request->constant_buffer.size = sizeof(Matrix);
 
-		PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+		PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
       request->type = ASSET_REQUEST_CREATE_CONSTANT_BUFFER;
       request->constant_buffer.register_index = REGISTER_INDEX_VS_WORLD_VIEW_MATRIX;
       request->constant_buffer.size = sizeof(Matrix);
 
-		PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+		PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
       request->type = ASSET_REQUEST_CREATE_CONSTANT_BUFFER;
       request->constant_buffer.register_index = REGISTER_INDEX_VS_CAMERA_POS;
       request->constant_buffer.size = sizeof(V4);
 		
-		PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+		PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
       request->type = ASSET_REQUEST_CREATE_CONSTANT_BUFFER;
       request->constant_buffer.register_index = REGISTER_INDEX_PS_SCREEN_DATA;
       request->constant_buffer.size = sizeof(Int2);
 
-		PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+		PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
       request->type = ASSET_REQUEST_CREATE_CONSTANT_BUFFER;
       request->constant_buffer.register_index = REGISTER_INDEX_PS_TIME;
       request->constant_buffer.size = sizeof(float);
 		
-		PUSH_BACK(init_data.asset_requests, memory.temp_arena, request);
+		PUSH_BACK(memory.asset_requests, memory.temp_arena, request);
 		request->type = ASSET_REQUEST_CREATE_DEPTH_STENCIL;
 		request->p_uid = ARENA_PUSH_STRUCT(memory.temp_arena, u16);
 		request->enable_depth = 0;
-
-		UNTIL(app_i, apps_count)
-		{
-			apps[app_i].init(&memory, app_data, &init_data);
-		}
 	}	
-
-
 
 	// WINDOW CREATION
 
@@ -308,11 +297,12 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 	
 	HWND window;
 	{
+		//TODO: make this a request or provide some way to edit it from the app side
 		char window_title[256] = "THE window";
-		if(init_data.window_title.text)
-		{
-			copy_mem(init_data.window_title.text, window_title, init_data.window_title.length);
-		}
+		//	if(init_data.window_title.text)
+		//	{
+		//		copy_mem(init_data.window_title.text, window_title, init_data.window_title.length);
+		//	}
 		window = CreateWindowExA(
 			0,// WS_EX_TOPMOST,
 			window_class.lpszClassName,
@@ -611,567 +601,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 
 	ARRAY_DECLARATION(Audio_playback, playback_array, 300, assets_arena);
 
-	u32 assets_count = 0;
-
-	FOREACH(Asset_request, request, init_data.asset_requests)
-	{
-		switch(request->type){
-			case ASSET_REQUEST_TEX_FROM_FILE:{
-				ASSERT(win_file_exists(request->filename.text));
-				ASSERT(request->p_uid);
-
-				int comp;
-				Surface tex_surface = {0};
-				char temp_buffer [MAX_PATH] = {0}; 
-				copy_mem(request->filename.text, temp_buffer, request->filename.length);
-				tex_surface.data = stbi_load(temp_buffer, (int*)&tex_surface.width, (int*)&tex_surface.height, &comp, STBI_rgb_alpha);
-				ASSERT(tex_surface.data);
-				
-				*request->p_uid = (u16)LIST_SIZE(memory.tex_infos);
-				Tex_info* tex_info; PUSH_BACK(memory.tex_infos, assets_arena, tex_info);
-				tex_info->w = tex_surface.width;
-				tex_info->h = tex_surface.height;
-				tex_info->texrect.x = 0.0f;
-				tex_info->texrect.y = 0.0f;
-				tex_info->texrect.w = 1.0f;
-				tex_info->texrect.h = 1.0f;
-
-				tex_info->texture_uid = LIST_SIZE(textures_list);
-				Dx11_texture_view** texture_view; PUSH_BACK(textures_list, assets_arena, texture_view);
-				ID3D11Texture2D* texture2d = dx11_create_texture2d(dx, &tex_surface);
-				dx11_create_texture_view(dx, texture2d, texture_view);
-				texture2d->Release();
-			}break;
-
-
-			case ASSET_REQUEST_VS_FROM_FILE:{
-				// COMPILING VS
-					// File_data compiled_vs = dx11_get_compiled_shader(request->filename, temp_arena, "vs", VS_PROFILE);
-				// CREATING VS
-				File_data compiled_vs = win_read_file(request->filename, temp_arena);
-				u32 current_index = LIST_SIZE(vertex_shaders_list);
-				ASSERT(current_index < 0xffff);
-				*request->p_uid = (u16)current_index;
-				Vertex_shader* vs; PUSH_BACK(vertex_shaders_list, assets_arena, vs);
-				dx11_create_vs(dx, compiled_vs, &vs->shader);
-
-				vs->filename.length = request->filename.length;
-				vs->filename.text = (char*)arena_push_data(permanent_arena, request->filename.text, request->filename.length);
-				arena_push_size(permanent_arena,1);
-				vs->last_write_time = win_get_last_write_time(vs->filename.text);
-				
-
-				s32 MAX_IE_SIZE = sizeof(f32)*4;
-				
-				u32 ie_count = 0;
-				#define USE_APPEND_ALIGNED_ELEMENT 1
-
-				#if USE_APPEND_ALIGNED_ELEMENT
-				#else
-					u32 aligned_byte_offsets [2] = {0};
-				#endif
-				D3D11_INPUT_ELEMENT_DESC* ied = (D3D11_INPUT_ELEMENT_DESC*)(temp_arena->data+temp_arena->used);
-				s32 total_element_size = 0;
-				UNTIL(j, ARRAYLEN(request->ied.names))
-				{
-					s32 current_element_size = ie_formats_sizes[request->ied.formats[j]];
-					total_element_size += current_element_size;
-					for(s32 semantic_index = 0; current_element_size > 0; semantic_index++)
-					{
-						ie_count++;
-						D3D11_INPUT_ELEMENT_DESC* current_ied = ARENA_PUSH_STRUCT(temp_arena, D3D11_INPUT_ELEMENT_DESC);
-						current_ied->SemanticName = request->ied.names[j];
-						// this is in case the element is bigger than a float4 (a matrix for example)
-						current_ied->SemanticIndex = semantic_index;
-						
-						current_ied->Format = ie_formats_list[request->ied.formats[j]];
-
-						u32 ie_slot = 0;
-						if(request->ied.next_slot_beginning_index && j >= request->ied.next_slot_beginning_index)
-						{
-							ie_slot = 1;
-						}
-						
-						#if USE_APPEND_ALIGNED_ELEMENT
-							current_ied->AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-						#else
-							current_ied->AlignedByteOffset = aligned_byte_offsets[ie_slot];
-							aligned_byte_offsets[ie_slot] += MIN(MAX_IE_SIZE,current_element_size); 
-						#endif
-						current_element_size -= MAX_IE_SIZE;
-						
-						current_ied->InputSlot = ie_slot;// this is for using secondary buffers (like an instance buffer)
-						current_ied->InputSlotClass = (D3D11_INPUT_CLASSIFICATION)ie_slot; // 0 PER_VERTEX_DATA vs 1 PER_INSTANCE_DATA
-						current_ied->InstanceDataStepRate = ie_slot; // the amount of instances to draw using the PER_INSTANCE data
-					}
-				}
-				UNTIL(e, ie_count)
-				{
-					ied[e];
-					ASSERT(true);
-				}
-				hr = dx->device->CreateInputLayout(
-					ied, ie_count, 
-					compiled_vs.data, compiled_vs.size, 
-					&vs->input_layout
-				); 
-				ASSERTHR(hr);
-			}break;
-
-
-			case ASSET_REQUEST_PS_FROM_FILE:{
-				u32 current_index = LIST_SIZE(pixel_shaders_list);
-				ASSERT(current_index < 0xffff);
-				*request->p_uid = (u16)current_index;
-				// COMPILING PS
-					// File_data compiled_ps = dx11_get_compiled_shader(request->filename, temp_arena, "ps", PS_PROFILE);
-				// CREATING PS
-				File_data compiled_ps = win_read_file(request->filename, temp_arena);
-
-				Pixel_shader* ps; PUSH_BACK(pixel_shaders_list, assets_arena, ps);
-				dx11_create_ps(dx, compiled_ps, &ps->shader);
-
-				ps->filename.length = request->filename.length;
-				ps->filename.text = (char*)arena_push_data(permanent_arena, request->filename.text, request->filename.length);
-				arena_push_size(permanent_arena,1);
-				ps->last_write_time = win_get_last_write_time(ps->filename.text);
-			}break;
-
-
-			case ASSET_REQUEST_MESH_FROM_FILE:
-			{
-				File_data glb_file = win_read_file(request->filename, temp_arena);
-				GLB glb = {0};
-				glb_get_chunks(glb_file.data, 
-					&glb);
-				#if DEBUGMODE
-					{ // THIS IS JUST FOR READABILITY OF THE JSON CHUNK
-						void* formated_json = arena_push_size(temp_arena,MEGABYTES(4));
-						u32 new_size = format_json_more_readable(glb.json_chunk, glb.json_size, formated_json);
-						win_write_file(concat_strings(request->filename, string(".json"), temp_arena), formated_json, new_size);
-						arena_pop_back_size(temp_arena, MEGABYTES(4));
-					}
-				#endif
-				u32 meshes_count = 0;
-				Gltf_mesh* meshes = gltf_get_meshes(&glb, temp_arena, &meshes_count);
-				
-				Mesh_primitive* primitives = ARENA_PUSH_STRUCTS(assets_arena, Mesh_primitive, meshes_count);
-				for(u32 m=0; m<meshes_count; m++)
-				{
-					Gltf_primitive* mesh_primitive = meshes[m].primitives;
-					//TODO: here i am assuming this mesh has only one primitive
-					V3 normals [8];
-					copy_mem(mesh_primitive->normals, normals, sizeof(V3)*8);
-					primitives[m] = gltf_primitives_to_mesh_primitives(assets_arena, &mesh_primitive[0]);
-					// u32 primitives_count = meshes[m].primitives_count;
-					// for(u32 p=0; p<primitives_count; p++)
-					// {	
-					// }
-				}
-				u32 current_index = LIST_SIZE(meshes_list);
-				ASSERT(current_index < 0xffff);
-				*request->p_uid = (u16)current_index;
-				
-				Dx_mesh* current_mesh; PUSH_BACK(meshes_list, assets_arena, current_mesh);
-				*current_mesh = dx11_init_mesh(dx, 
-				&primitives[0],
-				D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);	
-			}break;
-
-
-			case ASSET_REQUEST_CREATE_BLEND_STATE:{
-				u32 current_index = LIST_SIZE(blend_states_list);
-				ASSERT(current_index < 0xffff);
-				*request->p_uid = (u16)current_index;
-
-				Dx11_blend_state** blend_state; PUSH_BACK(blend_states_list, assets_arena, blend_state);
-				if(!dx11_create_blend_state(dx, blend_state, request->enable_alpha_blending))
-				{
-					MessageBoxA(window, "CreateBlendState failed", 0, MB_OK|MB_ICONERROR);
-					return 10;
-				}
-			}break;
-
-
-			case ASSET_REQUEST_CREATE_DEPTH_STENCIL:{
-				u32 current_index = LIST_SIZE(depth_stencils_list);
-				ASSERT(current_index < 0xffff);
-				*request->p_uid = (u16)current_index;
-
-				Depth_stencil* depth_stencil; PUSH_BACK(depth_stencils_list, assets_arena, depth_stencil);
-				dx11_create_depth_stencil_state(dx, &depth_stencil->state, request->enable_depth);
-			}break;
-
-
-			case ASSET_REQUEST_FONT_FROM_FILE:
-			{
-				ASSERT(request->font_lines_height);
-				// FONTS 
-				File_data font_file = win_read_file(request->filename, temp_arena);
-				//currently just supporting ANSI characters
-				//TODO: learn how to do UNICODE
-
-				// GETTING BITMAPS AND INFO
-				u32 atlas_texview_uid = LIST_SIZE(textures_list);
-
-				stbtt_fontinfo font;
-				Color32* charbitmaps [CHARS_COUNT];
-				Tex_info temp_charinfos[CHARS_COUNT];
-				stbtt_InitFont(&font, (u8*)font_file.data,stbtt_GetFontOffsetForIndex((u8*)font_file.data, 0));
-				f32 font_size = stbtt_ScaleForPixelHeight(&font, request->font_lines_height);
-
-				UNTIL(c, CHARS_COUNT)
-				{
-					u32 codepoint = c+FIRST_CHAR;
-
-					temp_charinfos[c].texture_uid = atlas_texview_uid;
-
-					u8* monobitmap = stbtt_GetCodepointBitmap(
-						&font, 0, 
-						font_size, 
-						// stbtt_ScaleForMappingEmToPixels(&font, request->font_lines_height),
-						codepoint,
-						&temp_charinfos[c].w, &temp_charinfos[c].h, 
-						&temp_charinfos[c].xoffset, &temp_charinfos[c].yoffset
-					);
-					if(temp_charinfos[c].w && temp_charinfos[c].h)
-					{
-						u32 bitmap_size = temp_charinfos[c].w * temp_charinfos[c].h;
-						charbitmaps[c] = ARENA_PUSH_STRUCTS(temp_arena, Color32, bitmap_size);
-						Color32* bitmap =  charbitmaps[c];
-						UNTIL(p, bitmap_size){
-							bitmap[p].r = 255;
-							bitmap[p].g = 255;
-							bitmap[p].b = 255;
-							bitmap[p].a = monobitmap[p];
-						}
-					}
-					stbtt_FreeBitmap(monobitmap,0);
-				}
-				// PACKING BITMAP RECTS
-
-				//total_atlas_size = atlas_side*atlas_side
-
-				s32 atlas_side;
-				{
-					
-					s32 min_value = (u32)(request->font_lines_height*(request->font_lines_height/2)*CHARS_COUNT);
-					s32 current_side = 2;
-					while(min_value>(current_side*current_side)){
-						current_side = current_side << 1;
-					}
-					atlas_side = current_side;
-
-				}
-
-
-				stbrp_context pack_context = {0};
-				stbrp_node* pack_nodes = ARENA_PUSH_STRUCTS(temp_arena, stbrp_node, atlas_side);
-				stbrp_init_target(&pack_context, atlas_side, atlas_side, pack_nodes, atlas_side);
-
-				stbrp_rect* rects = ARENA_PUSH_STRUCTS(temp_arena, stbrp_rect, CHARS_COUNT);
-				UNTIL(i, CHARS_COUNT){
-					rects[i].w = temp_charinfos[i].w;
-					rects[i].h = temp_charinfos[i].h;
-				}
-				stbrp_pack_rects(&pack_context, rects, CHARS_COUNT);
-
-				// CREATE TEXTURE ATLAS AND COPY EACH CHARACTER BITMAP INTO IT USING THE POSITIONS OBTAINED FROM PACK
-				Color32* atlas_pixels = ARENA_PUSH_STRUCTS(temp_arena, Color32, atlas_side*atlas_side);
-
-				Int2 atlas_size = {atlas_side, atlas_side};
-
-				*request->font_uid = (u16)LIST_SIZE(memory.fonts_list);
-				Font* new_font;
-				PUSH_BACK(memory.fonts_list, memory.permanent_arena, new_font);
-				new_font->texinfos_count = CHARS_COUNT;
-				new_font->texinfo_uids = ARENA_PUSH_STRUCTS(memory.permanent_arena, u32, new_font->texinfos_count);
-				new_font->first_char = FIRST_CHAR;
-				new_font->lines_height = request->font_lines_height;
-
-				int ascent, descent, line_gap;
-				
-				stbtt_GetFontVMetrics(&font, &ascent, &descent, &line_gap);
-				new_font->ascent = font_size * ascent;
-				new_font->descent = font_size * descent;
-				int x0, y0, x1, y1;
-				stbtt_GetFontBoundingBox(&font, &x0, &y0, &x1, &y1);
-
-
-				UNTIL(i, CHARS_COUNT){
-					ASSERT(rects[i].was_packed);
-					if(rects[i].was_packed){
-						temp_charinfos[i].texrect.x = (f32)rects[i].x / atlas_size.x;
-						temp_charinfos[i].texrect.y = (f32)rects[i].y / atlas_size.y;
-						temp_charinfos[i].texrect.w = (f32)temp_charinfos[i].w / atlas_size.x;
-						temp_charinfos[i].texrect.h = (f32)temp_charinfos[i].h / atlas_size.y;
-						
-						new_font->texinfo_uids[i] = LIST_SIZE(memory.tex_infos);
-						Tex_info* charinfo; PUSH_BACK(memory.tex_infos, assets_arena, charinfo);
-						*charinfo = temp_charinfos[i]; 
-
-						// PASTING EACH CHAR INTO THE ATLAS PIXELS
-						u32 first_char_pixel = (rects[i].y*atlas_side) + rects[i].x;
-						Color32* charpixels = charbitmaps[i];
-						UNTIL(y, (u32)rects[i].h){
-							UNTIL(x, (u32)rects[i].w){
-								u32 current_pixel = first_char_pixel + (y*atlas_side) + x;
-								atlas_pixels[current_pixel] = charpixels[(y*rects[i].w) + x];
-							}
-						}
-					}
-				}
-				new_font->atlas_texinfo_uid = (u16)LIST_SIZE(memory.tex_infos);
-				Tex_info* atlas_tex_info; PUSH_BACK(memory.tex_infos, assets_arena, atlas_tex_info);
-				atlas_tex_info->texture_uid = atlas_texview_uid;
-				atlas_tex_info->w = atlas_size.x;
-				atlas_tex_info->h = atlas_size.y;
-				atlas_tex_info->texrect.x = 0.0f;
-				atlas_tex_info->texrect.y = 0.0f;
-				atlas_tex_info->texrect.w = 1.0f;
-				atlas_tex_info->texrect.h = 1.0f;
-
-				Dx11_texture_view** atlas_texture; PUSH_BACK(textures_list, assets_arena, atlas_texture);
-				Surface atlas_surface = {(u32)atlas_size.x, (u32)atlas_size.y, atlas_pixels};
-				ID3D11Texture2D* texture2d = dx11_create_texture2d(dx, &atlas_surface);
-				dx11_create_texture_view(dx, texture2d, atlas_texture);
-				texture2d->Release();
-			}break;
-
-
-			case ASSET_REQUEST_TEX_FROM_SURFACE:{
-				u32 current_index = LIST_SIZE(memory.tex_infos);
-				ASSERT(current_index < 0xffff);
-				*request->p_uid = (u16)current_index;
-
-				Tex_info* tex_info; PUSH_BACK(memory.tex_infos, assets_arena, tex_info);
-				tex_info->w = request->tex_surface.width;
-				tex_info->h = request->tex_surface.height;
-
-				tex_info->texrect.x = 0.0f;
-				tex_info->texrect.y = 0.0f;
-				tex_info->texrect.w = 1.0f;
-				tex_info->texrect.h = 1.0f;
-				
-				ID3D11Texture2D* texture2d = dx11_create_texture2d(dx, &request->tex_surface);
-
-				tex_info->texture_uid = LIST_SIZE(textures_list);
-				Dx11_texture_view** texture_view; PUSH_BACK(textures_list, assets_arena, texture_view);
-				dx11_create_texture_view(dx, texture2d, texture_view);
-				texture2d->Release();
-			}break;
-
-			case ASSET_REQUEST_CREATE_DYNAMIC_TEXTURE:{
-				if(request->dynamic_tex_sizes.x && !request->dynamic_tex_sizes.y && !request->dynamic_tex_sizes.z)
-				{
-					ASSERT(false);
-				}
-				else if(request->dynamic_tex_sizes.x && request->dynamic_tex_sizes.y && !request->dynamic_tex_sizes.z)
-				{
-					D3D11_TEXTURE2D_DESC tex2d_desc = {0};
-					tex2d_desc.Width = request->dynamic_tex_sizes.x;
-					tex2d_desc.Height = request->dynamic_tex_sizes.y;
-					tex2d_desc.ArraySize = 1;
-					tex2d_desc.MipLevels = 1;
-					// this is for multi-sampling and antialiasing apparently (no idea how it works)
-					tex2d_desc.SampleDesc = {1,0}; 
-					tex2d_desc.Format = DXGI_FORMAT_R32_UINT;
-					tex2d_desc.Usage = D3D11_USAGE_DEFAULT;
-					tex2d_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-					tex2d_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-					ID3D11Texture2D* texture2d; 
-					hr = dx->device->CreateTexture2D(&tex2d_desc, 0, &texture2d);
-					ASSERTHR(hr);
-
-					*request->p_uid = (u16)LIST_SIZE(textures_list);
-					Dx11_texture_view** texture_view; PUSH_BACK(textures_list, assets_arena, texture_view);
-					dx11_create_texture_view(dx, texture2d, texture_view);
-					texture2d->Release();
-
-				}
-				else if(request->dynamic_tex_sizes.x && request->dynamic_tex_sizes.y && request->dynamic_tex_sizes.z)
-				{
-					
-					D3D11_TEXTURE3D_DESC tex3d_desc = {0};
-					tex3d_desc.Width = request->dynamic_tex_sizes.x;
-					tex3d_desc.Height = request->dynamic_tex_sizes.y;
-					tex3d_desc.Depth = request->dynamic_tex_sizes.z;
-					tex3d_desc.MipLevels = 1;
-					tex3d_desc.Format = DXGI_FORMAT_R32_UINT;
-					tex3d_desc.Usage = D3D11_USAGE_DEFAULT;
-					tex3d_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-					tex3d_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-					ID3D11Texture3D* texture3d; 
-					hr = dx->device->CreateTexture3D(&tex3d_desc, 0, &texture3d);
-					ASSERTHR(hr);
-
-					*request->p_uid = (u16)LIST_SIZE(textures_list);
-					Dx11_texture_view** texture_view; PUSH_BACK(textures_list, assets_arena, texture_view);
-					dx11_create_texture_view(dx, texture3d, texture_view);
-					texture3d->Release();
-				}
-				else
-				{
-					ASSERT(false);
-				}
-								
-			}break;
-
-			case ASSET_REQUEST_CREATE_RTV:
-			{
-				*request->p_uid = (u16)LIST_SIZE(render_targets_list);
-				Render_target* new_render_target;
-				PUSH_BACK(render_targets_list, assets_arena, new_render_target);
-
-				PUSH_BACK(textures_list, assets_arena, new_render_target->texture_view);
-			}break;
-
-
-			case ASSET_REQUEST_SOUND_FROM_FILE:{
-				Sound_sample* new_audio_samples =  &sounds_list[request->sound_uid];
-				ASSERT(!new_audio_samples->samples); // already saved in this index
-
-
-				File_data audio_file = win_read_file(request->filename, temp_arena);
-				u32* scan = (u32*)audio_file.data;
-				ASSERT(scan[0] == 'FFIR'); // RIFF
-				u32 file_size = scan[1];
-				file_size;
-				ASSERT(scan[2] == 'EVAW'); // WAVE
-				ASSERT(scan[3] == ' tmf'); // fmt\0 format chunk identifier
-				u32 format_chunk_size = scan[4];
-				format_chunk_size;
-
-				u16* scan16 = (u16*)&scan[5];
-				u16 sample_format = scan16[0]; // 1 is PCM
-				ASSERT(sample_format == 1);
-				u16 channels_count = scan16[1];
-				ASSERT(channels_count <= 2);
-
-				u32 sample_hz = scan[6];
-				ASSERT(sample_hz == 44100);
-				u32 bytes_p_second = scan[7]; // sample_hz * bits_per_sample * channels / 8
-
-				scan16 = (u16*)&scan[8];
-				u16 bytes_per_full_sample = scan16[0]; // bits_per_sample*channels / 8
-				u16 bits_per_sample = scan16[1]; 
-				ASSERT(bits_per_sample == 16);
-				ASSERT(bytes_p_second == (sample_hz*bytes_per_full_sample));
-
-
-				ASSERT(scan[9] == 'atad'); // data
-				u32 data_chunk_size = scan[10];
-
-				s16* sample_values = (s16*)&scan[11];
-				u16 bytes_per_sample = bits_per_sample / 8;
-
-				new_audio_samples->samples_count = data_chunk_size/bytes_per_sample;
-				new_audio_samples->channels = channels_count;
-				new_audio_samples->samples = ARENA_PUSH_STRUCTS(assets_arena, s16, new_audio_samples->samples_count);
-
-				UNTIL(i, new_audio_samples->samples_count){
-					new_audio_samples->samples[i] = sample_values[i];
-				}
-
-
-			}break;
-
-
-			case ASSET_REQUEST_MESH_FROM_PRIMITIVES:{
-				u32 current_index = LIST_SIZE(meshes_list);
-				ASSERT(current_index < 0xffff);
-				*request->p_uid = (u16)current_index;
-
-				Dx_mesh* current_mesh; PUSH_BACK(meshes_list, assets_arena, current_mesh);
-				*current_mesh = dx11_init_mesh(dx, 
-				&request->mesh_primitives, 
-				topologies_list[request->mesh_primitives.topology_uid]);
-			}break;
-
-			case ASSET_REQUEST_CREATE_CONSTANT_BUFFER:{
-				D3D_constant_buffer* new_constant_buffer = &renderer_variables[request->constant_buffer.register_index];
-				Shader_constant_buffer_register_index register_index = (Shader_constant_buffer_register_index)(request->constant_buffer.register_index%14);
-
-				u16 buffer_size = 16*((request->constant_buffer.size+15)/16);
-
-				
-				// ASSUMING I NEVER ASSIGN INITIAL DATA TO THE CONSTANT BUFFER
-				dx11_create_constant_buffer(dx, new_constant_buffer, buffer_size, register_index, 0);
-				if(request->constant_buffer.register_index < 14)
-				{
-					dx->context->VSSetConstantBuffers(register_index, 1, &new_constant_buffer->buffer);
-				}
-				else
-				{
-					dx->context->PSSetConstantBuffers(register_index, 1, &new_constant_buffer->buffer);
-				}
-			}break;
-
-			case ASSET_REQUEST_CREATE_DYNAMIC_MESH:{
-				u32 current_index = LIST_SIZE(meshes_list);
-				ASSERT(current_index < 0xffff);
-				*request->p_uid = (u16)current_index;
-
-				Dx_mesh* current_mesh; 
-				PUSH_BACK(meshes_list, assets_arena, current_mesh);
-				current_mesh->topology = topologies_list[request->mesh_primitives.topology_uid];
-				current_mesh->vertex_size = request->mesh_primitives.vertex_size;
-				current_mesh->vertices_count = request->mesh_primitives.vertex_count;
-				current_mesh->indices_count = request->mesh_primitives.indices_count;
-
-				// VERTEX BUFFER
-
-				D3D11_BUFFER_DESC bd = {0};
-				bd.ByteWidth        = current_mesh->vertices_count * current_mesh->vertex_size;
-				bd.Usage            = D3D11_USAGE_DYNAMIC;
-				bd.BindFlags        = D3D11_BIND_VERTEX_BUFFER;
-				bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-				
-				D3D11_SUBRESOURCE_DATA buffer_init_data = {0};
-				buffer_init_data.pSysMem  = request->mesh_primitives.vertices;
-				if(request->mesh_primitives.vertices)
-				{
-					ASSERTHR(dx->device->CreateBuffer( &bd, &buffer_init_data, &current_mesh->vertex_buffer));
-				}
-				else
-				{
-					ASSERTHR(dx->device->CreateBuffer( &bd, 0, &current_mesh->vertex_buffer ));
-				}
-
-				// INDEX BUFFER
-				if(request->mesh_primitives.indices_count)
-				{
-					bd = {0};
-					bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
-					bd.Usage = D3D11_USAGE_DYNAMIC;
-					bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-					bd.MiscFlags = 0;
-					bd.ByteWidth = current_mesh->indices_count*sizeof(u16);
-					bd.StructureByteStride = sizeof(u16);
-
-					buffer_init_data = {0};
-					buffer_init_data.pSysMem = request->mesh_primitives.indices;
-					
-					if(request->mesh_primitives.indices)
-					{
-						ASSERTHR(dx->device->CreateBuffer(&bd, &buffer_init_data, &current_mesh->index_buffer));
-					}
-					else
-					{
-						ASSERTHR(dx->device->CreateBuffer(&bd, 0, &current_mesh->index_buffer));
-					}
-				}
-			}break;
-
-			case FORGOR_TO_SET_ASSET_TYPE:
-			default:
-				ASSERT(false);
-			break;
-		}
-		assets_count++;
-	}
+	u32 assets_count = 0; //TODO: this is just for debugging
 
 	D3D_constant_buffer* object_buffer = &renderer_variables[0];
 
@@ -1220,7 +650,6 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 		initial_100ns = (LONGLONG)initial_time.dwLowDateTime + ((LONGLONG)(initial_time.dwHighDateTime) << 32LL);
 	}
 	// Int2 smaller_client_size = {1600, 900};
-	memory.renderer_needs_resizing = 1;
 	memory.aspect_ratio = (((f32)client_size.x) / client_size.y);
 	
 	// MAIN LOOP ________________________________________________________________________________________________________________________
@@ -1229,7 +658,8 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 	//
 	memory.screen_size.x = GetDeviceCaps(window_dc, HORZRES);
 	memory.screen_size.y = GetDeviceCaps(window_dc, VERTRES);
-	//TODO: test this way of doing it, but based on msdn they are the same
+	//TODO: test this way of doing it, but based on msdn they are the same 
+	// and they give the size of the SCREEN not the WINDOW nor CLIENT
 	// GetSystemMetrics(SM_CYSCREEN);
 	// GetSystemMetrics(SM_CXSCREEN);
 
@@ -1247,218 +677,142 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 		f32 keyboard_repeat_rate = 2.5f + ((keyboard_speed / 31) * (30.0f - 2.5f));
 		memory.keyboard_repeat_cooldown = 1 / keyboard_repeat_rate;
 	}
+
 	
+	LIST(Renderer_request, render_list) = {0};
    // PRE-PARING FOR RENDERING THIS FRAME
    {		
-		// |REQUEST_FLAG_SET_PS
-		{
-			Pixel_shader* pixel_shader; LIST_GET(pixel_shaders_list, 0, pixel_shader);
-			dx->context->PSSetShader(pixel_shader->shader, 0, 0);
-		}
-		// |REQUEST_FLAG_SET_VS
-		{
-			Vertex_shader* vertex_shader; LIST_GET(vertex_shaders_list, 0, vertex_shader);
+		Renderer_request* request;
+		PUSH_BACK(render_list, temp_arena, request);
 
-			dx->context->VSSetShader(vertex_shader->shader, 0, 0);
-			dx->context->IASetInputLayout(vertex_shader->input_layout);
-		}
-		// |REQUEST_FLAG_RESIZE_DEPTH_STENCIL_VIEW
+		request->type_flags = 0;
+		
+		request->type_flags |= REQUEST_FLAG_SET_PS;
 		{
-			Depth_stencil* resize_ds;
-			LIST_GET(depth_stencils_list, 0, resize_ds);
+			request->pshader_uid = 0;
+		}
 
-			dx11_create_depth_stencil_view(dx, &resize_ds->view, client_size.x, client_size.y);
-			dx->context->ClearDepthStencilView(
-				resize_ds->view,
-				D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-				1.0f, 0
-			);
+		request->type_flags |= REQUEST_FLAG_SET_VS;
+		{
+			request->vshader_uid = 0;
+		}
+
+		request->type_flags |= REQUEST_FLAG_RESIZE_DEPTH_STENCIL_VIEW;
+		request->type_flags |= REQUEST_FLAG_CHANGE_VIEWPORT_SIZE;
+		{
+			request->resize_depth_stencil_view_uid = 0;
+			request->new_viewport_size = client_size;
 		}	
-		// |REQUEST_FLAG_SET_RENDER_TARGET_AND_DEPTH_STENCIL
-		{
-			
-			create_screen_render_target_view(dx, &screen_render_target->target_view);
 
-			Depth_stencil* depth_stencil; LIST_GET(depth_stencils_list, 0, depth_stencil);
-			// state can be null to set the default depth_stencil in 
-			dx->context->OMSetDepthStencilState(depth_stencil->state, 0);
-			
-			Dx11_render_target_view** rtviews_to_bind = ARENA_PUSH_STRUCT(temp_arena, Dx11_render_target_view*);
-			
-			rtviews_to_bind[0] = screen_render_target->target_view;
-
-			dx->context->OMSetRenderTargets(1, rtviews_to_bind, depth_stencil->view); 
+		request->type_flags |= REQUEST_FLAG_SET_RENDER_TARGET_AND_DEPTH_STENCIL;
+		{			
+			request->set_depth_stencil_uid = 0;
+			request->set_rtv_count = 1;
+			request->set_rtv_uids = ARENA_PUSH_STRUCT(temp_arena, u16);
 		}
 		// |REQUEST_FLAG_RESIZE_TARGET_VIEW
 		{
 			
 		}
-
-		// |REQUEST_FLAG_CHANGE_VIEWPORT_SIZE
+		request->type_flags |= REQUEST_FLAG_SET_RASTERIZER_STATE;
 		{
-			dx11_set_viewport(dx, 0, 0, client_size.x, client_size.y);
-
-		}
-		// |REQUEST_FLAG_SET_RASTERIZER_STATE
-		{
-			dx->rasterizer_state->Release();
-			global_rasterizer_desc.FillMode = fill_modes_list[FILL_MODE_SOLID];
-			global_rasterizer_desc.CullMode = cull_modes_list[CULL_MODE_NONE];
-			hr = dx->device->CreateRasterizerState(&global_rasterizer_desc, &dx->rasterizer_state);
-			
-			dx11_bind_rasterizer_state(dx, dx->rasterizer_state);
-
-			ASSERTHR(hr);
-			
-		}
-		// |REQUEST_FLAG_SET_BLEND_STATE
-		{
-			Dx11_blend_state** blend_state; LIST_GET(blend_states_list, 0, blend_state);
-			dx->context->OMSetBlendState(*blend_state, 0, ~0U);   
+			request->rasterizer_state.fill_mode = FILL_MODE_SOLID;
+			request->rasterizer_state.cull_mode = CULL_MODE_NONE;
 		}
 
-		// |REQUEST_FLAG_MODIFY_RENDERER_VARIABLE
+		request->type_flags |= REQUEST_FLAG_SET_BLEND_STATE;
 		{
-			//WORLD VIEW MATRIX
-         Matrix world_view = matrix_translation( v3(0,0,0) );
-         
-         // WORLD PROJECTION
-			Matrix projection;
+			request->blend_state_uid = 0;
+		}
+
+		PUSH_BACK(render_list, temp_arena, request);
+		request->type_flags = REQUEST_FLAG_MODIFY_RENDERER_VARIABLE;
+
+		//WORLD VIEW MATRIX
+		{
+			request->renderer_variable.register_index = REGISTER_INDEX_VS_WORLD_VIEW_MATRIX;
+			Matrix* world_view = ARENA_PUSH_STRUCT(temp_arena, Matrix);
+			request->renderer_variable.new_data = world_view;
+         *world_view = matrix_translation( v3(0,0,0) );
+		}
+		PUSH_BACK(render_list, temp_arena, request);
+		request->type_flags = REQUEST_FLAG_MODIFY_RENDERER_VARIABLE;
+		// WORLD PROJECTION
+		{
+			request->renderer_variable.register_index = REGISTER_INDEX_VS_PROJECTION_MATRIX;
+			Matrix* projection = ARENA_PUSH_STRUCT(temp_arena, Matrix);
+			request->renderer_variable.new_data = projection;
          if(memory.perspective_on){
-            projection = build_perspective_matrix(memory.aspect_ratio, memory.fov, 0.1f, 500.0f, memory.depth_effect);
+            *projection = build_perspective_matrix(memory.aspect_ratio, memory.fov, 0.1f, 500.0f, memory.depth_effect);
          }else{         
-            projection = build_orthographic_matrix(memory.aspect_ratio, 2.0f, 0.001f, 100.0f);
+            *projection = build_orthographic_matrix(memory.aspect_ratio, 2.0f, 0.001f, 100.0f);
          }		
-
-			dx11_modify_resource(dx, 
-				renderer_variables[REGISTER_INDEX_VS_WORLD_VIEW_MATRIX].buffer, 
-				&world_view, 
-				renderer_variables[REGISTER_INDEX_VS_WORLD_VIEW_MATRIX].size
-			);
-			dx11_modify_resource(dx, 
-				renderer_variables[REGISTER_INDEX_VS_PROJECTION_MATRIX].buffer, 
-				&projection, 
-				renderer_variables[REGISTER_INDEX_VS_PROJECTION_MATRIX].size
-			);
 		}
+
    }
 	
 
 	while(!memory.close_app)
 	{
-		// arena_pop_back_size(temp_arena, temp_arena->used);
-
-		// THIS IS (A LOT!!) FASTER THAN MANUALLY CLEARING THE ARENA (at least with -Od, haven't compared with -O2)
-		VirtualFree(temp_arena->data, 0, MEM_RELEASE);
-		temp_arena->data = (u8*)VirtualAlloc(0, temp_arena->size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-		temp_arena->used = 0;
+		// now i'm resetting the temp arena at the end of the loop
 		
-		u8 pressed_keys [INPUT_COUNT]= {0};
-		
+		// this is to iniatilize to 0 the keys that are not going to be pressed since 
+		u8 just_pressed_keys [INPUT_COUNT] = {0}; 
 		
 		#if DEBUGMODE
-		UNTIL(app_i, apps_count)
-		{
-			FILETIME dll_last_write_time = win_get_last_write_time(dll_names[app_i]);
-			if(CompareFileTime(&dll_last_write_time, &apps[app_i].dll_last_write_time) != 0)
+			UNTIL(app_i, apps_count)
 			{
-				FreeLibrary(apps[app_i].dll);
-				apps[app_i].dll = 0;
-				apps[app_i].update = 0;
-				apps[app_i].render = 0;
-				apps[app_i].close_app = 0 ;
-
-				apps[app_i].dll = win_load_game_dll(dll_names[app_i], &apps[app_i].dll_last_write_time);
-				
-				if(apps[app_i].dll)
+				FILETIME dll_last_write_time = win_get_last_write_time(dll_names[app_i]);
+				if(CompareFileTime(&dll_last_write_time, &apps[app_i].dll_last_write_time) != 0)
 				{
-					apps[app_i].update = (UPDATE_TYPE( ))GetProcAddress(apps[app_i].dll, "update");
-					apps[app_i].render = (RENDER_TYPE( ))GetProcAddress(apps[app_i].dll, "render");
-					apps[app_i].close_app = (CLOSE_TYPE( ))GetProcAddress(apps[app_i].dll, "close_app");
+					FreeLibrary(apps[app_i].dll);
+					apps[app_i].dll = 0;
+					apps[app_i].update = 0;
+					apps[app_i].render = 0;
+					apps[app_i].close_app = 0 ;
 
-					ASSERT(apps[app_i].update && apps[app_i].render);
+					apps[app_i].dll = win_load_game_dll(dll_names[app_i], &apps[app_i].dll_last_write_time);
+					
+					if(apps[app_i].dll)
+					{
+						apps[app_i].update = (UPDATE_TYPE( ))GetProcAddress(apps[app_i].dll, "update");
+						apps[app_i].render = (RENDER_TYPE( ))GetProcAddress(apps[app_i].dll, "render");
+						apps[app_i].close_app = (CLOSE_TYPE( ))GetProcAddress(apps[app_i].dll, "close_app");
+
+						ASSERT(apps[app_i].update && apps[app_i].render);
+					}
 				}
 			}
-		}
 
-		FOREACH(Vertex_shader, current_vs, vertex_shaders_list)
-		{
-			FILETIME vs_last_write_time = win_get_last_write_time(current_vs->filename.text);
-			if(CompareFileTime(&vs_last_write_time, &current_vs->last_write_time) != 0)
+			FOREACH(Vertex_shader, current_vs, vertex_shaders_list)
 			{
-				current_vs->shader->Release();
-				String temp_filename = concat_strings(current_vs->filename, string(".temp"), temp_arena);
-				win_copy_file(current_vs->filename, temp_filename);
-				File_data compiled_vs = win_read_file(temp_filename, temp_arena);
-				
-				dx11_create_vs(dx, compiled_vs, &current_vs->shader);				
-				current_vs->last_write_time = win_get_last_write_time(current_vs->filename.text);
+				FILETIME vs_last_write_time = win_get_last_write_time(current_vs->filename.text);
+				if(CompareFileTime(&vs_last_write_time, &current_vs->last_write_time) != 0)
+				{
+					current_vs->shader->Release();
+					String temp_filename = concat_strings(current_vs->filename, string(".temp"), temp_arena);
+					win_copy_file(current_vs->filename, temp_filename);
+					File_data compiled_vs = win_read_file(temp_filename, temp_arena);
+					
+					dx11_create_vs(dx, compiled_vs, &current_vs->shader);				
+					current_vs->last_write_time = win_get_last_write_time(current_vs->filename.text);
+				}
 			}
-		}
-		FOREACH(Pixel_shader, current_ps, pixel_shaders_list)
-		{
-			FILETIME ps_last_write_time = win_get_last_write_time(current_ps->filename.text);
-			if(CompareFileTime(&ps_last_write_time, &current_ps->last_write_time) != 0)
+			FOREACH(Pixel_shader, current_ps, pixel_shaders_list)
 			{
-				current_ps->shader->Release();
-				String temp_filename = concat_strings(current_ps->filename, string(".temp"), temp_arena);
-				win_copy_file(current_ps->filename, temp_filename);
-				File_data compiled_ps = win_read_file(temp_filename, temp_arena);
-				
-				dx11_create_ps(dx, compiled_ps, &current_ps->shader);				
-				current_ps->last_write_time = win_get_last_write_time(current_ps->filename.text);
+				FILETIME ps_last_write_time = win_get_last_write_time(current_ps->filename.text);
+				if(CompareFileTime(&ps_last_write_time, &current_ps->last_write_time) != 0)
+				{
+					current_ps->shader->Release();
+					String temp_filename = concat_strings(current_ps->filename, string(".temp"), temp_arena);
+					win_copy_file(current_ps->filename, temp_filename);
+					File_data compiled_ps = win_read_file(temp_filename, temp_arena);
+					
+					dx11_create_ps(dx, compiled_ps, &current_ps->shader);				
+					current_ps->last_write_time = win_get_last_write_time(current_ps->filename.text);
+				}
 			}
-		}
 		#endif
-
-		// HANDLE WINDOW RESIZING
-		Int2 current_client_size = win_get_client_sizes(window);
-		if( !screen_render_target->target_view || 
-			client_size.x != current_client_size.x || 
-			client_size.y != current_client_size.y
-		)
-		{
-			memory.renderer_needs_resizing = true;
-			s32 new_width = current_client_size.x;
-			s32 new_height = current_client_size.y;
-
-			RECT new_client_size = {0,0,new_width,new_height};
-			client_size = {new_width, new_height};
-
-			if(screen_render_target->target_view)
-			{
-				screen_render_target->target_view->Release();
-				screen_render_target->target_view = 0;
-			}
-			
-			//TODO: be careful with 8k monitors
-			// why did i limit it to 4k again??
-			if(client_size.x > 0 && client_size.y > 0 
-			// && client_size.x < 4000 && client_size.y < 4000
-			){
-				ASSERT(client_size.x < 4000 && client_size.y < 4000);
-				memory.aspect_ratio = (f32)client_size.x / (f32) client_size.y;
-				hr = dx->swap_chain->ResizeBuffers(0, client_size.x, client_size.y, DXGI_FORMAT_UNKNOWN, 0);
-				ASSERTHR(hr);
-
-				create_screen_render_target_view(dx, &screen_render_target->target_view);
-				
-				Depth_stencil* resize_ds;
-				LIST_GET(depth_stencils_list, 0, resize_ds);
-				if(resize_ds->view)
-				{
-					resize_ds->view->Release();
-					resize_ds->view = 0;
-				}
-				dx11_create_depth_stencil_view(dx, &resize_ds->view, client_size.x, client_size.y);
-				dx->context->ClearDepthStencilView(
-					resize_ds->view,
-					D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-					1.0f, 0
-				);
-
-			}
-		}
 
 		// MOUSE POSITION
 		HWND foreground_window = GetForegroundWindow();
@@ -1517,16 +871,16 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 				case WM_LBUTTONDBLCLK:
 				break;
 				case WM_LBUTTONDOWN:// just when the buttom is pushed
-					set_input(holding_inputs.keys, pressed_keys, INPUT_CURSOR_PRIMARY, 1);
+					set_input(holding_inputs.keys, just_pressed_keys, INPUT_CURSOR_PRIMARY, 1);
 				break;
 				case WM_LBUTTONUP:
-					set_input(holding_inputs.keys, pressed_keys, INPUT_CURSOR_PRIMARY, 0);
+					set_input(holding_inputs.keys, just_pressed_keys, INPUT_CURSOR_PRIMARY, 0);
 				break;
 				case WM_RBUTTONDOWN:
-					set_input(holding_inputs.keys, pressed_keys, INPUT_CURSOR_SECONDARY, 1);
+					set_input(holding_inputs.keys, just_pressed_keys, INPUT_CURSOR_SECONDARY, 1);
 				break;
 				case WM_RBUTTONUP:
-					set_input(holding_inputs.keys, pressed_keys, INPUT_CURSOR_SECONDARY, 0);
+					set_input(holding_inputs.keys, just_pressed_keys, INPUT_CURSOR_SECONDARY, 0);
 				break;
 				case WM_MOUSEWHEEL:
 				{
@@ -1547,7 +901,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 					ASSERT(is_down == 0 || is_down == 1);
 					if(is_down != was_down)
 					{	
-						#define SET_INPUT(k_index) set_input(holding_inputs.keys, pressed_keys, k_index, is_down)
+						#define SET_INPUT(k_index) set_input(holding_inputs.keys, just_pressed_keys, k_index, is_down)
 						switch(vkcode){
 							case VK_SPACE:
 								SET_INPUT(INPUT_SPACE_BAR);
@@ -1796,7 +1150,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 		UNTIL(i, INPUT_COUNT)
 		{
 			// input.keys[i] = holding_inputs.keys[i] + input.keys[i]*holding_inputs.keys[i];
-			if(pressed_keys[i])
+			if(just_pressed_keys[i])
 			{
 				input.keys[i] = 1;
 			}
@@ -1848,14 +1202,33 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 
 			// memory.rng.last_seed = (u32)((((f64)st.wMilliseconds/999) + ((f64)st.wSecond/60000)) * 0xffffffff);
 		}
+		b32 window_size_just_changed = false;
+		Int2 current_client_size = win_get_client_sizes(window);
+		if(client_size.x != current_client_size.x || client_size.y != current_client_size.y)
+		{
+			window_size_just_changed = true;
+			client_size = current_client_size;
+		}
 
 		if(apps[current_app].update)
 		{
 			apps[current_app].update(&memory, app_data,{playback_array, sample_t}, client_size);
 		}
 
+		#include "temp_asset_request.c"
+		CLEAR_LIST(memory.asset_requests);
+		
+		// APP RENDER REQUESTS/PREPARATION
 
-		// SOUND RENDERING
+		if(apps[current_app].render)
+		{
+			apps[current_app].render(&memory, app_data, render_list, client_size);
+		}
+
+		
+
+
+		// SOUND PLAYBACK
 
 		
 		{
@@ -1970,15 +1343,45 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 		}
 
 
-
-		// APP RENDER REQUESTS/PREPARATION
-
-
-		LIST(Renderer_request, render_list) = {0};
-		if(apps[current_app].render)
+		// HANDLE WINDOW RESIZING
+		if( !screen_render_target->target_view || window_size_just_changed
+		)
 		{
-			apps[current_app].render(&memory, app_data, render_list, client_size);
+
+			if(screen_render_target->target_view)
+			{
+				screen_render_target->target_view->Release();
+				screen_render_target->target_view = 0;
+			}
+			
+			//TODO: be careful with 8k monitors
+			// why did i limit it to 4k again??
+			if(client_size.x > 0 && client_size.y > 0 
+			// && client_size.x < 4000 && client_size.y < 4000
+			){
+				ASSERT(client_size.x < 4000 && client_size.y < 4000);
+				memory.aspect_ratio = (f32)client_size.x / (f32) client_size.y;
+				hr = dx->swap_chain->ResizeBuffers(0, client_size.x, client_size.y, DXGI_FORMAT_UNKNOWN, 0);
+				ASSERTHR(hr);
+
+				create_screen_render_target_view(dx, &screen_render_target->target_view);
+				
+				Depth_stencil* resize_ds;
+				LIST_GET(depth_stencils_list, 0, resize_ds);
+				if(resize_ds->view)
+				{
+					resize_ds->view->Release();
+					resize_ds->view = 0;
+				}
+				dx11_create_depth_stencil_view(dx, &resize_ds->view, client_size.x, client_size.y);
+				dx->context->ClearDepthStencilView(
+					resize_ds->view,
+					D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+					1.0f, 0
+				);
+			}
 		}
+
 
 		// ACTUALLY RENDER
 
@@ -2190,7 +1593,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 						renderer_variables[request->renderer_variable.register_index].buffer, 
 						request->renderer_variable.new_data, 
 						renderer_variables[request->renderer_variable.register_index].size
-						);
+					);
 				}
 				if(request->type_flags & REQUEST_FLAG_CHANGE_VIEWPORT_SIZE)
 				{
@@ -2324,6 +1727,18 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 			hr = dx->swap_chain->Present(1,0);
 			ASSERTHR(hr);
 		}
+		
+		//CLEARING RENDER LIST
+		CLEAR_LIST(render_list);
+
+		// RESETTING TEMP ARENA
+		
+		// arena_pop_back_size(temp_arena, temp_arena->used);
+
+		// THIS IS (A LOT!!) FASTER THAN MANUALLY CLEARING THE ARENA (at least with -Od, haven't compared with -O2)
+		VirtualFree(temp_arena->data, 0, MEM_RELEASE);
+		temp_arena->data = (u8*)VirtualAlloc(0, temp_arena->size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+		temp_arena->used = 0;
 
 
 #if PRINT_FRAMERATE 
@@ -2386,25 +1801,27 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 				}
 			#endif
 		}
-#if PRINT_FRAMERATE
-		{// print out framerate
-			LARGE_INTEGER current_wall_clock;
-			QueryPerformanceCounter(&current_wall_clock);
 
-			f32 ms_per_frame = 1000.0f * (f32)(current_wall_clock.QuadPart - this_frame_counter.QuadPart) / (f32)performance_counter_frequency;
-			s64 end_cycle_count = __rdtsc(); // clock cycles count
+		#if PRINT_FRAMERATE
+			{// print out framerate
+				LARGE_INTEGER current_wall_clock;
+				QueryPerformanceCounter(&current_wall_clock);
+
+				f32 ms_per_frame = 1000.0f * (f32)(current_wall_clock.QuadPart - this_frame_counter.QuadPart) / (f32)performance_counter_frequency;
+				s64 end_cycle_count = __rdtsc(); // clock cycles count
 
 
-			u64 cycles_elapsed = end_cycle_count - last_cycles_count;
-			f32 FPS = (1.0f / (ms_per_frame/1000.0f));
-			s32 MegaCyclesPF = (s32)((f64)cycles_elapsed / (f64)(1000*1000));
+				u64 cycles_elapsed = end_cycle_count - last_cycles_count;
+				f32 FPS = (1.0f / (ms_per_frame/1000.0f));
+				s32 MegaCyclesPF = (s32)((f64)cycles_elapsed / (f64)(1000*1000));
 
-			char text_buffer[256];
-			wsprintfA(text_buffer, "%dms/f| %d f/s|  %d Mhz/f \n", (s32)ms_per_frame, (s32)FPS, MegaCyclesPF);
-			OutputDebugStringA(text_buffer);   
-			last_cycles_count = __rdtsc();
-		}
-#endif
+				char text_buffer[256];
+				wsprintfA(text_buffer, "%dms/f| %d f/s|  %d Mhz/f \n", (s32)ms_per_frame, (s32)FPS, MegaCyclesPF);
+				OutputDebugStringA(text_buffer);   
+				last_cycles_count = __rdtsc();
+			}
+		#endif
+
 	}
 	if(apps[0].close_app)
 	{

@@ -43,6 +43,7 @@ struct String
 	u32 length;
 };
 
+//TODO: make this a macro, I should have a reference about this somewhere but I don't remember (like in a library or something like that)
 internal String 
 string(char* text)
 {

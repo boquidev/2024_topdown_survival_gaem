@@ -6,7 +6,7 @@
 // #include "color"
 
 // Byte/Memory operations
-internal void 
+internal void // for some reason this is too slow compared to freeing and re allocating the memory
 set_mem(void* mem, u32 size, u8 value)
 {
 	u8* scan = (u8*)mem;

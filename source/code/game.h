@@ -263,7 +263,6 @@ do_widget_old(UI* ui, u32 widget_flags, Ui_style style)
 	// if(ui_push_inside) ui->current_parent_uid = new_widget_index;
 	
    new_widget->child_count = 0;
-   ui->widgets[new_widget->parent_uid].child_count++;
 
 	return result;
 }
@@ -309,6 +308,7 @@ point_vs_ui_rect(Int2 p, Rect_int rect)
 
 struct App_data
 {
+	b32 is_initialized;
    V3 camera_pos;
    Int2 viewport_size;
 

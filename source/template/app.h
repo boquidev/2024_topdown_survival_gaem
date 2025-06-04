@@ -12,7 +12,6 @@
 // EXPORTED FUNCTIONS
 #define UPDATE_TYPE(...) void (*__VA_ARGS__)(Platform_data*, App_data*, Audio, Int2)
 #define RENDER_TYPE(...) void (*__VA_ARGS__)(Platform_data*, App_data*, LIST(Renderer_request,), Int2 )
-#define INIT_TYPE(...) void (*__VA_ARGS__)(Platform_data*, App_data*, Init_data* )
 #define CLOSE_TYPE(...) void (*__VA_ARGS__)(Platform_data*, App_data*)
 
 // WIN FUNCTIONS
@@ -271,6 +270,120 @@ internal b32 operator==(Date d1, Date d2)
 	return compare_dates(d1, d2);
 }
 
+// REQUESTS STRUCTS AND FUNCTIONS BOILERPLATE
+// TODO: UNIFY ALL THIS FUNCTIONS AND STRUCTS TO BE JUST ONE THING
+// maybe what I meant by that is to do something similar to what I did with the renderer_requests?
+// also, there are assets and things that are not assets.
+enum Asset_request_type{
+	FORGOR_TO_SET_ASSET_TYPE = 0,
+	ASSET_REQUEST_TEX_FROM_FILE,
+	ASSET_REQUEST_FONT_FROM_FILE,
+	ASSET_REQUEST_VS_FROM_FILE,
+	ASSET_REQUEST_PS_FROM_FILE,
+	ASSET_REQUEST_MESH_FROM_FILE,
+	ASSET_REQUEST_CREATE_BLEND_STATE,
+	ASSET_REQUEST_CREATE_DEPTH_STENCIL,
+	ASSET_REQUEST_CREATE_RTV,
+	ASSET_REQUEST_SOUND_FROM_FILE,
+
+	ASSET_REQUEST_TEX_FROM_SURFACE,
+	ASSET_REQUEST_CREATE_DYNAMIC_TEXTURE,
+	ASSET_REQUEST_MESH_FROM_PRIMITIVES,
+	ASSET_REQUEST_CREATE_CONSTANT_BUFFER,
+	ASSET_REQUEST_CREATE_DYNAMIC_MESH,
+};
+enum IE_CLASS
+{
+	IE_CLASS_PER_VERTEX,
+	IE_CLASS_PER_INDEX,
+};
+
+struct Input_element_desc
+{
+	ARRAY(char*, names);
+	ARRAY(IE_FORMATS, formats);
+	u32 next_slot_beginning_index; // this is for instancing
+};
+#define DEFAULT_IED_NAMES \
+	"POSITION", \
+	"TEXCOORD",\
+	"NORMAL",\
+	"BONE_WEIGHTS",\
+	"BONE_INDICES",\
+	\
+	"INSTANCE_OBJECT_TRANSFORM",\
+	"INSTANCE_COLOR",\
+	"INSTANCE_TEXRECT"
+
+#define DEFAULT_IED_FORMATS \
+	IE_FORMAT_3F32,\
+	IE_FORMAT_2F32,\
+	IE_FORMAT_3F32,\
+	IE_FORMAT_3F32,\
+	IE_FORMAT_3U32,\
+	\
+	IE_FORMAT_16F32,\
+	IE_FORMAT_4F32,\
+	IE_FORMAT_4F32,
+
+struct Asset_request
+{
+	//TODO: clearly create each struct for each type of request 
+	// cuz right now i can't tell which properties each request uses
+	Asset_request_type type;
+	union
+	{
+		u16* p_uid;
+		u32 sound_uid;
+		u16* font_uid;
+	};
+	union
+	{
+		struct 
+		{ // this is for vertex shader
+			String filename;
+			Input_element_desc ied; // input_element_desc
+			f32 font_lines_height;
+		};
+		struct
+		{
+			u32 register_index;
+			u16 size;// constant buffer can't be bigger than 65536 (actually it can but it's complicated)
+		}constant_buffer;
+
+		union
+		{
+			Mesh_primitive mesh_primitives; 
+			struct 
+			{
+				// void* vertices;
+				void* unused3;
+				// u32 vertex_size;
+				u32 instance_size;
+				// u32 vertex_count;
+				u32 max_instances;
+
+				// u16* indices;
+				u16* unused1;
+				// u32 indices_count;
+				u32 unused2;
+				// u32 topology_uid;
+				u32 topology_uid;
+
+			}instancing_dynamic_mesh;
+		};
+		
+		Surface tex_surface;
+
+		Int3 dynamic_tex_sizes;
+		
+		//TODO: THIS ARE NOT ASSETS BUT I DON'T KNOW WHERE TO PUT'EM
+		b32 enable_alpha_blending;
+
+		b32 enable_depth;
+	};
+};
+
 #define GET_CURRENT_DATE_FUNCTION_TYPE(...) Datetime (*__VA_ARGS__)()
 #define OFFSET_DATE_BY_DAYS_FUNCTION_TYPE(...) Datetime (*__VA_ARGS__)(Datetime*, s32)
 
@@ -290,7 +403,8 @@ struct Platform_data
 	b32 close_app;
 
 	b32 is_initialized;
-	b32 renderer_needs_resizing; // this is just for when i want to change the rendering resolution
+	// I honestly don't remember why was this for
+	// b32 renderer_needs_resizing; // this is just for when i want to change the rendering resolution
 
 	Memory_arena* permanent_arena;
 	Memory_arena* temp_arena;
@@ -299,7 +413,9 @@ struct Platform_data
 	int last_pressed_key_last_repeat_value;
 	f32 keyboard_repeat_delay;
 	f32 keyboard_repeat_cooldown;
+
 	
+	LIST(Asset_request, asset_requests);	
 
 	RNG rng;
 
@@ -501,130 +617,6 @@ struct Sound_playback_request
 	u16 sound_uid;
 };
 
-
-// REQUESTS STRUCTS AND FUNCTIONS BOILERPLATE
-// TODO: UNIFY ALL THIS FUNCTIONS AND STRUCTS TO BE JUST ONE THING
-enum Asset_request_type{
-	FORGOR_TO_SET_ASSET_TYPE = 0,
-	ASSET_REQUEST_TEX_FROM_FILE,
-	ASSET_REQUEST_FONT_FROM_FILE,
-	ASSET_REQUEST_VS_FROM_FILE,
-	ASSET_REQUEST_PS_FROM_FILE,
-	ASSET_REQUEST_MESH_FROM_FILE,
-	ASSET_REQUEST_CREATE_BLEND_STATE,
-	ASSET_REQUEST_CREATE_DEPTH_STENCIL,
-	ASSET_REQUEST_CREATE_RTV,
-	ASSET_REQUEST_SOUND_FROM_FILE,
-
-	ASSET_REQUEST_TEX_FROM_SURFACE,
-	ASSET_REQUEST_CREATE_DYNAMIC_TEXTURE,
-	ASSET_REQUEST_MESH_FROM_PRIMITIVES,
-	ASSET_REQUEST_CREATE_CONSTANT_BUFFER,
-	ASSET_REQUEST_CREATE_DYNAMIC_MESH,
-};
-enum IE_CLASS
-{
-	IE_CLASS_PER_VERTEX,
-	IE_CLASS_PER_INDEX,
-};
-
-struct Input_element_desc
-{
-	ARRAY(char*, names);
-	ARRAY(IE_FORMATS, formats);
-	u32 next_slot_beginning_index; // this is for instancing
-};
-#define DEFAULT_IED_NAMES \
-	"POSITION", \
-	"TEXCOORD",\
-	"NORMAL",\
-	"BONE_WEIGHTS",\
-	"BONE_INDICES",\
-	\
-	"INSTANCE_OBJECT_TRANSFORM",\
-	"INSTANCE_COLOR",\
-	"INSTANCE_TEXRECT"
-
-#define DEFAULT_IED_FORMATS \
-	IE_FORMAT_3F32,\
-	IE_FORMAT_2F32,\
-	IE_FORMAT_3F32,\
-	IE_FORMAT_3F32,\
-	IE_FORMAT_3U32,\
-	\
-	IE_FORMAT_16F32,\
-	IE_FORMAT_4F32,\
-	IE_FORMAT_4F32,
-
-struct Asset_request
-{
-	//TODO: clearly create each struct for each type of request 
-	// cuz right now i can't tell which properties each request uses
-	Asset_request_type type;
-	union
-	{
-		u16* p_uid;
-		u32 sound_uid;
-		u16* font_uid;
-	};
-	union
-	{
-		struct 
-		{ // this is for vertex shader
-			String filename;
-			Input_element_desc ied; // input_element_desc
-			f32 font_lines_height;
-		};
-		struct
-		{
-			u32 register_index;
-			u16 size;// constant buffer can't be bigger than 65536 (actually it can but it's complicated)
-		}constant_buffer;
-
-		union
-		{
-			Mesh_primitive mesh_primitives; 
-			struct 
-			{
-				// void* vertices;
-				void* unused3;
-				// u32 vertex_size;
-				u32 instance_size;
-				// u32 vertex_count;
-				u32 max_instances;
-
-				// u16* indices;
-				u16* unused1;
-				// u32 indices_count;
-				u32 unused2;
-				// u32 topology_uid;
-				u32 topology_uid;
-
-			}instancing_dynamic_mesh;
-		};
-		
-		Surface tex_surface;
-
-		Int3 dynamic_tex_sizes;
-		
-		//TODO: THIS ARE NOT ASSETS BUT I DON'T KNOW WHERE TO PUT'EM
-		b32 enable_alpha_blending;
-
-		b32 enable_depth;
-	};
-};
-
-struct Init_data
-{
-	// this is sent from the platform layer to the init function
-	// File_data meshes_serialization;
-	// File_data textures_serialization;
-	// File_data sounds_serialization;
- 
-	// this is the result from the init function to the platform layer
-	String window_title;
-	LIST(Asset_request, asset_requests);
-};
 
 
 struct String_index_pair{
@@ -1054,4 +1046,13 @@ pos_scale_rot_to_transform_matrix(V3 pos, V3 scale, Quaternion rot)
 	;
 }
 
+internal void
+asset_request_tex_from_file(Platform_data* memory, u16* p_uid, char* filename)
+{
+	Asset_request* request;
+   PUSH_BACK(memory->asset_requests, memory->temp_arena, request);
+   request->type = ASSET_REQUEST_TEX_FROM_FILE;
+   request->filename = string(filename);
+   request->p_uid = p_uid;
+}
 #endif
