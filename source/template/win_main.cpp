@@ -3,7 +3,7 @@
 #include <windows.h>
 #include <dsound.h>
 
-#include "app.h"
+#include "platform.h"
 // #include APP_HEADER_FILENAME
 
 #include "win_functions.h"

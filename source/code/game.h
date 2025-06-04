@@ -1,7 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "../template/app.h"
+#include "../template/platform.h"
 
 #define WORLD_X_LENGTH 1000
 #define WORLD_Y_LENGTH 1000
