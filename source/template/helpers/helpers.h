@@ -453,6 +453,13 @@ calculate_delta_velocity_xy_frictions(V2 velocity, V2 acceleration, V2 frictions
 	return  acceleration - (v2_component_wise_product(frictions, velocity));
 }
 
+internal V3
+v3_calculate_delta_velocity(V3 velocity, V3 acceleration, f32 friction)
+{
+	return (acceleration - (friction*velocity));
+}
+
+
 
 internal f32
 px_x_to_screen(int pixels, Int2 client_size)
