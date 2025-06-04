@@ -1,12 +1,8 @@
 #include "game.h"
 
-void init(Platform_data* memory, App_data* app)
-{memory, app;
-
-}
-
-void update(Platform_data* memory, App_data* app, Audio audio, Int2 client_size)
-{memory, app, audio, client_size;
+void update(Platform_data* memory, Audio audio, Int2 client_size)
+{memory, audio, client_size;
+   App_data* app = (App_data*)memory->app_data;
    User_input* input = memory->input;
 
    // PLATFORM INITIALIZATION
@@ -14,6 +10,9 @@ void update(Platform_data* memory, App_data* app, Audio audio, Int2 client_size)
    if(!memory->is_initialized)
    {
       memory->is_initialized = 1;
+      memory->app_data = ARENA_PUSH_STRUCT(memory->permanent_arena, App_data);
+      app = (App_data*)memory->app_data;
+      
       app->is_initialized = 0;
       f32* temp_texture  = ARENA_PUSH_STRUCTS(memory->temp_arena, f32, WORLD_X_LENGTH*WORLD_Y_LENGTH);
       UNTIL(i, WORLD_X_LENGTH*WORLD_Y_LENGTH)
@@ -700,8 +699,10 @@ void update(Platform_data* memory, App_data* app, Audio audio, Int2 client_size)
    app->camera_pos.v2 = app->entities[E_PLAYER_INDEX].pos;
 }
 
-void render(Platform_data* memory, App_data* app, LIST(Renderer_request, render_list), Int2 client_size)
-{memory, app, render_list, client_size;
+void render(Platform_data* memory, LIST(Renderer_request, render_list), Int2 client_size)
+{memory, render_list, client_size;
+   App_data* app = (App_data*) memory->app_data;
+
    Font* default_font = memory->fonts_list[0];
    Renderer_request* request = 0;
 
@@ -985,7 +986,7 @@ void render(Platform_data* memory, App_data* app, LIST(Renderer_request, render_
    request->object3d.texinfo_uid = NULL_INDEX16;
 }
 
-void close_app(Platform_data* memory, App_data* app)
-{memory, app;
+void close_app(Platform_data* memory)
+{memory;
    
 }

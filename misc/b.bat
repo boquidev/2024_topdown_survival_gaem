@@ -7,7 +7,7 @@ set LINKER_FLAGS= -incremental:no -opt:ref user32.lib gdi32.lib winmm.lib Kernel
 set PREPROCESSOR_DEFINITIONS= -D"APP_DLL_NAMES={\"%DLL_NAME%.dll\"}" -DUSE_MMCSS=0 -D"APP_HEADER_FILENAME=\"../code/game.h\""
 
 set DllLinkerFlags=  -incremental:no -PDB:%DLL_NAME%%random%.pdb
-set ExportedFunctions= -EXPORT:update -EXPORT:render -EXPORT:init -EXPORT:close_app
+set ExportedFunctions= -EXPORT:update -EXPORT:render -EXPORT:close_app
 
 cd ..
 

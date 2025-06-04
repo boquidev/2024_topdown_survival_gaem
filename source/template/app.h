@@ -1,5 +1,5 @@
-#ifndef APP_H
-#define APP_H
+#ifndef PLATFORM_H
+#define PLATFORM_H
 //TODO: app.h need another name
 
 #include <math.h>
@@ -10,19 +10,22 @@
 
 
 // EXPORTED FUNCTIONS
-#define UPDATE_TYPE(...) void (*__VA_ARGS__)(Platform_data*, App_data*, Audio, Int2)
-#define RENDER_TYPE(...) void (*__VA_ARGS__)(Platform_data*, App_data*, LIST(Renderer_request,), Int2 )
-#define CLOSE_TYPE(...) void (*__VA_ARGS__)(Platform_data*, App_data*)
+#define FUNCTION_TYPE_UPDATE(...) void (*__VA_ARGS__)(Platform_data*, Audio, Int2)
+#define FUNCTION_TYPE_RENDER(...) void (*__VA_ARGS__)(Platform_data*, LIST(Renderer_request,), Int2 )
+#define FUNCTION_TYPE_CLOSE(...) void (*__VA_ARGS__)(Platform_data*)
 
 // WIN FUNCTIONS
 	// file io
-#define READ_FILE_FUNCTION_TYPE(...) File_data (*__VA_ARGS__)(String, Memory_arena*)
-#define WRITE_FILE_FUNCTION_TYPE(...) bool (*__VA_ARGS__)(String, void*, u32)
-#define FILE_EXISTS_FUNCTION_TYPE(...) bool (*__VA_ARGS__)(char*)
-#define DELETE_FILE_FUNCTION_TYPE(...) bool (*__VA_ARGS__)(String)
-#define COPY_FILE_FUNCTION_TYPE(...) bool (*__VA_ARGS__)(String, String)
-#define GET_CURRENT_DIRECTORY_FUNCTION_TYPE(...) String (*__VA_ARGS__)(Memory_arena*)
-#define LIST_ALL_FILES_FUNCTION_TYPE(...) bool (*__VA_ARGS__)(String, LIST(Filename,), Memory_arena*)
+#define FUNCTION_TYPE_READ_FILE(...) File_data (*__VA_ARGS__)(String, Memory_arena*)
+#define FUNCTION_TYPE_WRITE_FILE(...) bool (*__VA_ARGS__)(String, void*, u32)
+#define FUNCTION_TYPE_FILE_EXISTS(...) bool (*__VA_ARGS__)(char*)
+#define FUNCTION_TYPE_DELETE_FILE(...) bool (*__VA_ARGS__)(String)
+#define FUNCTION_TYPE_COPY_FILE(...) bool (*__VA_ARGS__)(String, String)
+#define FUNCTION_TYPE_GET_CURRENT_DIRECTORY(...) String (*__VA_ARGS__)(Memory_arena*)
+#define FUNCTION_TYPE_LIST_ALL_FILES(...) bool (*__VA_ARGS__)(String, LIST(Filename,), Memory_arena*)
+
+#define FUNCTION_TYPE_GET_CURRENT_DATE(...) Datetime (*__VA_ARGS__)()
+#define FUNCTION_TYPE_OFFSET_DATE_BY_DAYS(...) Datetime (*__VA_ARGS__)(Datetime*, s32)
 
 
 struct Element_handle
@@ -220,13 +223,13 @@ struct Filename
 
 struct FILE_IO_FUNCTIONS
 {
-	READ_FILE_FUNCTION_TYPE(read_file);
-	WRITE_FILE_FUNCTION_TYPE(write_file);
-	FILE_EXISTS_FUNCTION_TYPE(file_exists);
-	DELETE_FILE_FUNCTION_TYPE(delete_file);
-	COPY_FILE_FUNCTION_TYPE(copy_file);
-	GET_CURRENT_DIRECTORY_FUNCTION_TYPE(get_current_directory);
-	LIST_ALL_FILES_FUNCTION_TYPE(list_all_files);
+	FUNCTION_TYPE_READ_FILE(read_file);
+	FUNCTION_TYPE_WRITE_FILE(write_file);
+	FUNCTION_TYPE_FILE_EXISTS(file_exists);
+	FUNCTION_TYPE_DELETE_FILE(delete_file);
+	FUNCTION_TYPE_COPY_FILE(copy_file);
+	FUNCTION_TYPE_GET_CURRENT_DIRECTORY(get_current_directory);
+	FUNCTION_TYPE_LIST_ALL_FILES(list_all_files);
 };
 
 struct Date
@@ -384,17 +387,15 @@ struct Asset_request
 	};
 };
 
-#define GET_CURRENT_DATE_FUNCTION_TYPE(...) Datetime (*__VA_ARGS__)()
-#define OFFSET_DATE_BY_DAYS_FUNCTION_TYPE(...) Datetime (*__VA_ARGS__)(Datetime*, s32)
-
 struct WIN_TIME_FUNCTIONS
 {
-	GET_CURRENT_DATE_FUNCTION_TYPE(get_current_date);
-	OFFSET_DATE_BY_DAYS_FUNCTION_TYPE(offset_date_by_days);
+	FUNCTION_TYPE_GET_CURRENT_DATE(get_current_date);
+	FUNCTION_TYPE_OFFSET_DATE_BY_DAYS(offset_date_by_days);
 };
 
 struct Platform_data
 {
+	void* app_data;
 	FILE_IO_FUNCTIONS file_io;
 	WIN_TIME_FUNCTIONS win_time;
 

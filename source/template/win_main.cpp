@@ -4,7 +4,7 @@
 #include <dsound.h>
 
 #include "app.h"
-#include APP_HEADER_FILENAME
+// #include APP_HEADER_FILENAME
 
 #include "win_functions.h"
 
@@ -28,9 +28,9 @@ struct App_dll
 	FILETIME dll_last_write_time;
 	HMODULE dll;
 
-	UPDATE_TYPE(update);
-	RENDER_TYPE(render);
-	CLOSE_TYPE(close_app);
+	FUNCTION_TYPE_UPDATE(update);
+	FUNCTION_TYPE_RENDER(render);
+	FUNCTION_TYPE_CLOSE(close_app);
 };
 
 struct Audio_output
@@ -114,7 +114,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 	memory.permanent_arena = permanent_arena;
 
 	
-	App_data* app_data = (App_data*)VirtualAlloc(0, sizeof(App_data), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	// App_data* app_data = (App_data*)VirtualAlloc(0, sizeof(App_data), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	// LOADING APP DLL
 
 
@@ -127,9 +127,9 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 		{
 			apps[dll_i].dll = win_load_game_dll(dll_names[dll_i], &apps[dll_i].dll_last_write_time);
 			ASSERT(apps[dll_i].dll);
-			apps[dll_i].update = (UPDATE_TYPE( ))GetProcAddress(apps[dll_i].dll, "update");
-			apps[dll_i].render = (RENDER_TYPE( ))GetProcAddress(apps[dll_i].dll, "render");
-			apps[dll_i].close_app = (CLOSE_TYPE( ))GetProcAddress(apps[dll_i].dll, "close_app");
+			apps[dll_i].update = (FUNCTION_TYPE_UPDATE( ))GetProcAddress(apps[dll_i].dll, "update");
+			apps[dll_i].render = (FUNCTION_TYPE_RENDER( ))GetProcAddress(apps[dll_i].dll, "render");
+			apps[dll_i].close_app = (FUNCTION_TYPE_CLOSE( ))GetProcAddress(apps[dll_i].dll, "close_app");
 			ASSERT(apps[dll_i].update);
 			ASSERT(apps[dll_i].render);
 		}
@@ -775,9 +775,9 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 					
 					if(apps[app_i].dll)
 					{
-						apps[app_i].update = (UPDATE_TYPE( ))GetProcAddress(apps[app_i].dll, "update");
-						apps[app_i].render = (RENDER_TYPE( ))GetProcAddress(apps[app_i].dll, "render");
-						apps[app_i].close_app = (CLOSE_TYPE( ))GetProcAddress(apps[app_i].dll, "close_app");
+						apps[app_i].update = (FUNCTION_TYPE_UPDATE( ))GetProcAddress(apps[app_i].dll, "update");
+						apps[app_i].render = (FUNCTION_TYPE_RENDER( ))GetProcAddress(apps[app_i].dll, "render");
+						apps[app_i].close_app = (FUNCTION_TYPE_CLOSE( ))GetProcAddress(apps[app_i].dll, "close_app");
 
 						ASSERT(apps[app_i].update && apps[app_i].render);
 					}
@@ -1212,7 +1212,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 
 		if(apps[current_app].update)
 		{
-			apps[current_app].update(&memory, app_data,{playback_array, sample_t}, client_size);
+			apps[current_app].update(&memory, {playback_array, sample_t}, client_size);
 		}
 
 		#include "temp_asset_request.c"
@@ -1222,7 +1222,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 
 		if(apps[current_app].render)
 		{
-			apps[current_app].render(&memory, app_data, render_list, client_size);
+			apps[current_app].render(&memory, render_list, client_size);
 		}
 
 		
@@ -1825,7 +1825,7 @@ wWinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, PWSTR cmd_line, int cm
 	}
 	if(apps[0].close_app)
 	{
-		apps[0].close_app(&memory, app_data);
+		apps[0].close_app(&memory);
 	}
 
 	//TODO: this is dumb but i don't want dumb messages each time i exit
